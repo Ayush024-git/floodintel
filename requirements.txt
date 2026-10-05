@@ -1,0 +1,14 @@
+pystac-client
+planetary-computer
+stackstac
+rioxarray
+rasterio
+geopandas
+osmnx
+networkx
+torch
+segmentation-models-pytorch
+pysheds
+fastapi
+uvicorn
+pytest
