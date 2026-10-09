@@ -13,3 +13,4 @@ fastapi
 uvicorn
 pytest
 scipy
+requests
