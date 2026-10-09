@@ -12,3 +12,4 @@ pysheds
 fastapi
 uvicorn
 pytest
+scipy
