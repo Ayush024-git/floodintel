@@ -4,3 +4,4 @@ data/cache/
 .env
 __pycache__/
 data/external/
+runs/
