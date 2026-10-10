@@ -111,6 +111,27 @@ def test_tag_parsing_bridge_view_and_ids(aoi, tmp_path, payload):
     assert any("Dropped 1 building relations" in warning for warning in result.warnings)
 
 
+def test_buildings_deferred_skips_query_and_uses_separate_caches(aoi, tmp_path, payload):
+    included = build(aoi, tmp_path, payload)
+    session = Session([Response(payload)])
+    deferred = osm.build_osm(aoi, cache_dir=tmp_path, session=session,
+                             context_buffer_km=0, endpoints=ENDPOINTS, include_buildings=False)
+    assert len(session.calls) == 1  # Neither the bundle nor tile cache was shared.
+    assert '["building"]' not in session.calls[0][1]["data"]["data"]
+    assert deferred.buildings.empty
+    assert deferred.quality["buildings_status"] == "buildings deferred"
+    assert deferred.quality["building_density_per_km2"] is None
+    assert deferred.quality["dropped_building_relations"] == 0
+    assert not any("Zero buildings" in warning for warning in deferred.warnings)
+    assert deferred.cache_path != included.cache_path
+    cached_session = Session([])
+    cached = osm.build_osm(aoi, cache_dir=tmp_path, session=cached_session,
+                           context_buffer_km=0, endpoints=ENDPOINTS, include_buildings=False)
+    assert cached_session.calls == []
+    assert cached.buildings.empty
+    assert cached.quality == deferred.quality
+
+
 def test_verified_snapshot_and_query_header(aoi, tmp_path, payload):
     session = Session([Response(payload)])
     result = osm.build_osm(aoi, cache_dir=tmp_path, session=session, context_buffer_km=0, endpoints=ENDPOINTS)

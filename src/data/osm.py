@@ -148,7 +148,9 @@ def tile_bbox(bbox: BBox, max_side_km: float = 10) -> list[BBox]:
     ]
 
 
-def overpass_query(tile: BBox, aoi_bbox: BBox, snapshot: datetime) -> str:
+def overpass_query(
+    tile: BBox, aoi_bbox: BBox, snapshot: datetime, include_buildings: bool = True,
+) -> str:
     """Query full AOI features, buffered major roads/points, and dependency metadata."""
     def bounds_string(bounds: BBox) -> str:
         west, south, east, north = bounds
@@ -159,10 +161,9 @@ def overpass_query(tile: BBox, aoi_bbox: BBox, snapshot: datetime) -> str:
     inside = box(*tile).intersection(box(*aoi_bbox))
     if inside.area > 0:
         local = bounds_string(inside.bounds)
-        shapes.extend([
-            f'way["highway"~"^({"|".join(ROAD_CLASSES)})$"]{local};',
-            f'way["building"]{local};', f'relation["building"]{local};',
-        ])
+        shapes.append(f'way["highway"~"^({"|".join(ROAD_CLASSES)})$"]{local};')
+        if include_buildings:
+            shapes.extend([f'way["building"]{local};', f'relation["building"]{local};'])
     points = []
     for kind in ("node", "way"):
         points.extend([
@@ -259,6 +260,7 @@ def _key(data: Any) -> str:
 def _acquire(
     aoi: AOI, snapshot: datetime, extent: BBox, cache_dir: Path,
     client: OverpassClient, strict: bool, endpoints: tuple[str, ...],
+    include_buildings: bool = True,
 ) -> tuple[list[dict], str, dict[str, Any], list[str]]:
     """Verify each tile, retaining successful tiles when another endpoint fails."""
     records, warnings = [], []
@@ -269,7 +271,7 @@ def _acquire(
     for tile in tiles:
         paths = [
             (endpoint, cache_dir / "osm" / "tiles" / (
-                _key([tile, aoi.bbox, _iso(snapshot), QUERY_VERSION, endpoint]) + ".json"
+                _key([tile, aoi.bbox, _iso(snapshot), QUERY_VERSION, endpoint, include_buildings]) + ".json"
             ))
             for endpoint in endpoints
         ]
@@ -299,7 +301,7 @@ def _acquire(
         if selected is None:
             errors = []
             snapshot_failures = 0
-            query = overpass_query(tile, aoi.bbox, snapshot)
+            query = overpass_query(tile, aoi.bbox, snapshot, include_buildings)
             for endpoint, path in paths:
                 try:
                     payload = client.request(endpoint, query)
@@ -433,6 +435,7 @@ def _frame(rows: list[dict], layer: str, crs: CRS) -> gpd.GeoDataFrame:
 
 def _extract(
     elements: list[dict], bbox: BBox, extent: BBox, crs: CRS,
+    include_buildings: bool = True,
 ) -> tuple[dict[str, gpd.GeoDataFrame], dict[str, int]]:
     """Clip AOI layers and keep only major roads and point features in context."""
     aoi_box, context = box(*bbox), box(*extent)
@@ -444,10 +447,10 @@ def _extract(
             continue
         kind = element["type"]
         common = {"osm_id": f"{kind}/{element['id']}", "timestamp": element.get("timestamp"), "name": tags.get("name")}
-        if kind == "relation" and "building" in tags:
+        if include_buildings and kind == "relation" and "building" in tags:
             dropped += 1
         coordinates = []
-        if kind == "way" and (tags.get("highway") in ROAD_CLASSES or "building" in tags):
+        if kind == "way" and (tags.get("highway") in ROAD_CLASSES or (include_buildings and "building" in tags)):
             try:
                 coordinates = [(float(p["lon"]), float(p["lat"])) for p in element.get("geometry", [])]
             except (TypeError, KeyError, ValueError):
@@ -474,7 +477,7 @@ def _extract(
                         "is_bridge": _flag(tags, "bridge"), "is_tunnel": _flag(tags, "tunnel"),
                         "is_ford": _flag(tags, "ford"), "in_aoi": in_aoi, "geometry": geometry,
                     })
-        if kind == "way" and "building" in tags:
+        if include_buildings and kind == "way" and "building" in tags:
             if len(coordinates) < 4 or coordinates[0] != coordinates[-1]:
                 invalid += 1
             else:
@@ -688,15 +691,18 @@ def build_osm(
     snapshot_offset_days: int = 0, strict: bool = True, context_buffer_km: float = 10,
     session: Any = None, crs: Any = None, post_fn: Callable[..., Any] | None = None,
     endpoints: tuple[str, ...] = ENDPOINTS,
+    include_buildings: bool = True,
 ) -> OSMBundle:
     """Build a verified historical bundle; context has major roads and points only."""
     if type(strict) is not bool:
         raise ValueError("strict must be explicitly True or False")
+    if type(include_buildings) is not bool:
+        raise ValueError("include_buildings must be explicitly True or False")
     snapshot = snapshot_datetime(aoi, snapshot_offset_days)
     extent = context_bbox(aoi.bbox, context_buffer_km)
     target_crs = CRS.from_user_input(crs if crs is not None else (stack.crs if stack else "EPSG:32645"))
     cache_dir = Path(cache_dir).resolve()
-    key = _key([aoi.bbox, _iso(snapshot), float(context_buffer_km), target_crs.to_string(), QUERY_VERSION])
+    key = _key([aoi.bbox, _iso(snapshot), float(context_buffer_km), target_crs.to_string(), QUERY_VERSION, include_buildings])
     path = cache_dir / "osm" / key / "osm.gpkg"
     if path.with_suffix(".json").exists():
         cached = load_osm(path)
@@ -707,17 +713,23 @@ def build_osm(
     client = OverpassClient(session=session, post_fn=post_fn)
     try:
         records, endpoint, audit, acquisition_warnings = _acquire(
-            aoi, snapshot, extent, cache_dir, client, strict, endpoints,
+            aoi, snapshot, extent, cache_dir, client, strict, endpoints, include_buildings,
         )
     finally:
         client.close()
     elements, conflicts = _deduplicate(records)
     if conflicts and strict:
         raise OSMSnapshotError("Conflicting object versions were returned for a single date-locked snapshot")
-    frames, cleaning = _extract(elements, aoi.bbox, extent, target_crs)
+    frames, cleaning = _extract(elements, aoi.bbox, extent, target_crs, include_buildings)
     quality, warnings = _quality(frames, elements, aoi.bbox, snapshot, audit, cleaning)
     quality["context_buffer_km"] = context_buffer_km
     quality["context_road_classes"] = list(CONTEXT_ROADS)
+    quality["include_buildings"] = include_buildings
+    quality["buildings_status"] = "included" if include_buildings else "buildings deferred"
+    if not include_buildings:
+        quality["building_density_per_km2"] = None
+        warnings = [warning for warning in warnings if warning != "Zero buildings found in the AOI."]
+        warnings.append("Buildings deferred: include_buildings=False; footprints will be fetched later.")
     warnings = [*aoi.warnings, *acquisition_warnings, *warnings]
     warnings.append("Way/relation point features use Overpass bbox centers, not facility entrances or population centroids.")
     if stack is None and crs is None:
