@@ -3,3 +3,4 @@ data/cache/
 *.pt
 .env
 __pycache__/
+data/external/
