@@ -1,0 +1,230 @@
+{
+  "incident_id": "inc_e9ee823f659c",
+  "counts": {
+    "TP": 124,
+    "FP": 2839,
+    "FN": 58765,
+    "TN": 9179808,
+    "valid_pixels": 9241536,
+    "ignored_pixels": 0
+  },
+  "metrics": {
+    "iou": 0.002008812856402281,
+    "precision": 0.041849476881538984,
+    "recall": 0.0021056564044218784,
+    "f1": 0.0040095712345599175
+  },
+  "areas_km2": {
+    "ours": 0.2963,
+    "reference": 5.8889,
+    "overlap": 0.0124
+  },
+  "variants": {
+    "flood_mask": {
+      "counts": {
+        "TP": 124,
+        "FP": 0,
+        "FN": 58765,
+        "TN": 125953,
+        "valid_pixels": 184842,
+        "ignored_pixels": 9056694
+      },
+      "metrics": {
+        "iou": 0.0021056564044218784,
+        "precision": 1.0,
+        "recall": 0.0021056564044218784,
+        "f1": 0.004202463863894396
+      },
+      "areas_km2": {
+        "ours": 0.0124,
+        "reference": 5.8889,
+        "overlap": 0.0124
+      },
+      "tolerance_metrics": {
+        "precision_tol": 1.0,
+        "recall_tol": 0.007964135916724685,
+        "predicted_matched_pixels": 124,
+        "reference_matched_pixels": 469
+      },
+      "params": {
+        "tolerance_m": 50.0,
+        "domain": "areaOfInterestA minus notAnalysedA, common valid grid pixels",
+        "distance": "Euclidean pixel-centre distance",
+        "all_touched": false
+      }
+    },
+    "debris_candidate": {
+      "counts": {
+        "TP": 24234,
+        "FP": 1534,
+        "FN": 34655,
+        "TN": 124419,
+        "valid_pixels": 184842,
+        "ignored_pixels": 9056694
+      },
+      "metrics": {
+        "iou": 0.4010724393029145,
+        "precision": 0.9404687985097796,
+        "recall": 0.41151997826419195,
+        "f1": 0.5725220596052305
+      },
+      "areas_km2": {
+        "ours": 2.5768,
+        "reference": 5.8889,
+        "overlap": 2.4234
+      },
+      "tolerance_metrics": {
+        "precision_tol": 0.9739211425023284,
+        "recall_tol": 0.8790096622459203,
+        "predicted_matched_pixels": 25096,
+        "reference_matched_pixels": 51764
+      },
+      "params": {
+        "tolerance_m": 50.0,
+        "domain": "areaOfInterestA minus notAnalysedA, common valid grid pixels",
+        "distance": "Euclidean pixel-centre distance",
+        "all_touched": false
+      }
+    },
+    "union": {
+      "counts": {
+        "TP": 24358,
+        "FP": 1534,
+        "FN": 34531,
+        "TN": 124419,
+        "valid_pixels": 184842,
+        "ignored_pixels": 9056694
+      },
+      "metrics": {
+        "iou": 0.40312463796898534,
+        "precision": 0.9407539008187857,
+        "recall": 0.41362563466861385,
+        "f1": 0.5746098772130548
+      },
+      "areas_km2": {
+        "ours": 2.5892,
+        "reference": 5.8889,
+        "overlap": 2.4358
+      },
+      "tolerance_metrics": {
+        "precision_tol": 0.9740460373860652,
+        "recall_tol": 0.8803851313488088,
+        "predicted_matched_pixels": 25220,
+        "reference_matched_pixels": 51845
+      },
+      "params": {
+        "tolerance_m": 50.0,
+        "domain": "areaOfInterestA minus notAnalysedA, common valid grid pixels",
+        "distance": "Euclidean pixel-centre distance",
+        "all_touched": false
+      }
+    }
+  },
+  "domain": {
+    "area_km2": 18.483406755710487,
+    "on_grid_area_km2": 18.4842,
+    "valid_area_km2": 18.4842,
+    "our_flood_outside_area_km2": 0.2839,
+    "our_flood_outside_share": 0.958150523118461,
+    "not_analysed_present": true
+  },
+  "reference_acquisition_date": null,
+  "reference_acquisition_dates": [],
+  "reference_metadata_date_stamp": "2026-08-29",
+  "reference_date_source": null,
+  "our_post_image_date": null,
+  "our_post_date_source": null,
+  "date_gap_days": null,
+  "reference_polygon_count": 2,
+  "grid": {
+    "height": 3032,
+    "width": 3048,
+    "crs": "EPSG:32645",
+    "transform": [
+      10.0,
+      0.0,
+      302500.0,
+      0.0,
+      -10.0,
+      3105240.0
+    ],
+    "pixel_area_m2": 100.0
+  },
+  "warnings": [
+    "Reference image acquisition date is absent or ambiguous in the XML; its metadata creation/date stamp is not used as acquisition.",
+    "Post-image acquisition date is not recorded in flood_meta.json; the acquisition-date gap cannot be checked."
+  ],
+  "reference_event_types": [
+    "6-Mass Movement",
+    "Landslide"
+  ],
+  "params": {
+    "all_touched": false,
+    "date_gap_warning_days": 3,
+    "area_domain": "valid flood-grid pixels (legacy top-level only)",
+    "tolerance_m": 50.0,
+    "zero_denominator": 0
+  },
+  "inputs": {
+    "flood": "/Users/apex/floodintel/data/cache/incidents/inc_e9ee823f659c/flood/2cda2605c59ff044ee30d699/flood.tif",
+    "flood_metadata": "/Users/apex/floodintel/data/cache/incidents/inc_e9ee823f659c/flood/2cda2605c59ff044ee30d699/flood_meta.json",
+    "reference": "/Users/apex/floodintel/eval/emsr927/EMSR927_AOI03_GRA_PRODUCT_observedEventA_v1.shp",
+    "reference_xml": "/Users/apex/floodintel/eval/emsr927/EMSR927_AOI03_GRA_PRODUCT_source_v1.xml",
+    "reference_crs": "EPSG:4326",
+    "flood_params": {
+      "threshold": 0.6,
+      "pre_threshold": 0.6,
+      "hand_max_m": 15,
+      "slope_max_deg": 20,
+      "change_db_min": 3,
+      "min_pixels": 50,
+      "fill_hole_pixels": 50,
+      "tta": false,
+      "debris_buffer_m": 200,
+      "debris_slope_min_deg": 0,
+      "debris_slope_max_deg": 15,
+      "confidence_post_min": 0.8,
+      "confidence_pre_max": 0.2,
+      "terrain_exclusion_warning_fraction": 0.3,
+      "water_overlap_warning_fraction": 0.5,
+      "low_valid_caution": 0.9,
+      "low_valid_limiting": 0.6,
+      "tile": 512,
+      "overlap": 128,
+      "batch_size": 2,
+      "device": null,
+      "simplify_cells": 1.0,
+      "max_vector_features": 1000,
+      "threshold_source": "checkpoint",
+      "pre_threshold_source": "post_threshold",
+      "connectivity": 8,
+      "morphology_backend": "scipy.ndimage",
+      "checkpoint_path": "/Users/apex/floodintel/runs/expA/best.pt",
+      "checkpoint_hash": "d122f6430d87fe4689a164586a34382f9759d78c688c4864700931cdd8df720c",
+      "model_config": {
+        "arch": "unet",
+        "encoder": "resnet34",
+        "in_channels": 2,
+        "channels": [
+          "post_vv",
+          "post_vh"
+        ],
+        "encoder_weights": "imagenet",
+        "classes": 1,
+        "backend": "smp",
+        "depth": 3,
+        "width": 16
+      },
+      "calibration_data_present": false,
+      "hole_fill_policy": "Only enclosed holes wholly valid/plausible and not classified pre-water; additions are explicit",
+      "debris_label": "candidate: Sentinel-1 backscatter change near drainage; cannot confirm debris; requires inspection",
+      "stream_distance_basis": "Euclidean stream-cell center distance in meters",
+      "cache_key": "2cda2605c59ff044ee30d699",
+      "incident_id": "inc_e9ee823f659c"
+    },
+    "area_of_interest": "/Users/apex/floodintel/eval/emsr927/EMSR927_AOI03_GRA_PRODUCT_areaOfInterestA_v1.shp",
+    "not_analysed": "/Users/apex/floodintel/eval/emsr927/EMSR927_AOI03_GRA_PRODUCT_notAnalysedA_v1.shp"
+  },
+  "output_dir": "/Users/apex/floodintel/eval/results/inc_e9ee823f659c",
+  "agreement_note": "Pixel agreement with this reference is not a claim of model accuracy. Variant comparisons exclude pixels outside the supplied analysed domain. Legacy top-level numbers retain the full valid grid; survey completeness is not established."
+}
