@@ -103,18 +103,18 @@ Design choices that matter:
 ### 1. Install
 
 ```bash
-git clone <this repository>
+git clone https://github.com/Ayush024-git/floodintel.git
 cd floodintel
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python -m pytest -q
 ```
 
-Developed on Python 3.14 on macOS. Some geospatial wheels may need Python 3.12 or 3.13 on other platforms; `docs/TRAINING.md` documents that setup. Dependencies are not pinned.
+Run subsequent commands from the cloned `floodintel` root folder. `.venv/bin/python` uses the virtual environment without activation. Developed on Python 3.14 on macOS. Some geospatial wheels may need Python 3.12 or 3.13 on other platforms; `docs/TRAINING.md` documents that setup. Dependencies are not pinned.
 
 ### 2. Get a model checkpoint
 
-Checkpoints and datasets are not in the repository. Download `best.pt`, `config.json` and `metrics.json` from the Hugging Face model repository `Apex024/floodintel-expA` and place them in `runs/expA/`. This is the model whose scores are shown above. To train your own, see `docs/TRAINING.md`.
+Download `best.pt`, `config.json` and `metrics.json` from [Apex024/floodintel-expA on Hugging Face](https://huggingface.co/Apex024/floodintel-expA/tree/main). Create `runs/expA/` inside the repository and put all three files there, keeping their names unchanged. The checkpoint path must be `runs/expA/best.pt`. Checkpoints and datasets are not in GitHub. You do not need the training dataset or a new training run to use this released model. To train your own, see `docs/TRAINING.md`.
 
 ### 3. Run an analysis
 
@@ -122,37 +122,52 @@ Checkpoints and datasets are not in the repository. Download `best.pt`, `config.
 .venv/bin/python -m src.run --place "Trishuli, Nepal" --date 2026-08-26 --checkpoint runs/expA/best.pt
 ```
 
-Or with explicit bounds in west, south, east, north order:
+This runs all four stages: incident preparation, flood map, impact and dashboard. For another event, change the place and flood date (`YYYY-MM-DD`). Alternatively, use bounds in **west, south, east, north** order:
 
 ```bash
 .venv/bin/python -m src.run --bbox 84.99 27.79 85.30 28.06 --date 2026-08-26 --checkpoint runs/expA/best.pt
 ```
 
-The runner executes four stages (incident preparation, flood map, impact, dashboard), prints timings and cache hits, and prints the final dashboard and report paths. It stops with a plain reason if there is no usable same-orbit pair or no checkpoint.
+A new area downloads radar, elevation and OSM data. OSM took about **6–25 minutes** in our runs, sometimes longer when mirrors were slow; cached reruns take seconds. Buildings are skipped by default; add `--with-buildings` to include them, which adds time.
 
-A new area downloads radar windows, elevation and OSM data. In our runs the OSM step took about 6 to 25 minutes (longer when Overpass mirrors are slow); cached reruns take seconds. Buildings are skipped by default for speed (`--with-buildings` includes them, which adds time).
+Wait for the dashboard stage to finish. A successful run prints **`Incident:`**, **`Dashboard:`** and report paths. If it stops or is blocked, read the printed reason before trying to open a new report.
 
-Useful options: `--validation-json PATH` (add a post-hoc comparison to the dashboard, reporting only), `--cache-dir`, `--force`.
+Other options: `--validation-json PATH` adds a reporting-only comparison; `--cache-dir` changes the output cache; `--force` refreshes the incident receipt while downstream caches remain active. No validation JSON is needed for the normal demo.
 
-### 4. Open the results
+### 4. Find the incident ID and open the results
+
+The pipeline generates the ID and prints it after `Incident:`, for example `Incident: inc_e9ee823f659c`. Copy the ID from **your own run**. Wherever this README uses `<incident_id>`, replace it with that value, without angle brackets. The easiest option is to copy the complete path after **`Dashboard:`** and open it; the path already contains your ID.
+
+On macOS, the published Trishuli report opens with:
 
 ```bash
-open data/cache/incidents/<incident_id>/report/index.html
+open "data/cache/incidents/inc_e9ee823f659c/report/index.html"
 ```
 
-The page opens by double-click with no server. The interactive map loads its library from a CDN; offline, an SVG map and all tables still work. Print `situation_report.html` to PDF from the browser.
+Use that example only if your report has that ID; otherwise use your printed dashboard path. On Linux, use `xdg-open` instead of `open`, or double-click `index.html` in your file manager. A custom `--cache-dir` also changes the path.
 
-### Individual stages
+No server is required. The interactive map loads a library from a CDN; offline, the SVG fallback map and tables still work. Print `situation_report.html` to PDF from the browser. Opening a saved report does not rerun the analysis.
+
+### 5. Explore the demo
+
+- Check the incident heading and satellite dates, then inspect the flood confidence legend in **Impact**.
+- In **Infrastructure**, enable roads, hospitals and settlements; select a feature to inspect its evidence and access details.
+- Open **Isolation** for connected, cut-off and uncertain cases. Missing baseline routes are data gaps, not confirmed flood isolation.
+- Review **Trust** and **Provenance** for limitations and input sources. Debris candidates require inspection; **Validation** appears only when a comparison was supplied.
+
+### Individual stages (optional)
+
+The normal demo only needs `src.run` above. For individual stages, run the first line below, then copy `"incident_id"` from its printed JSON and confirm `"status"` is `"ready"`. Replace the ID placeholder before running the remaining lines in the same terminal session.
 
 ```bash
 .venv/bin/python -m src.data.incident --place "Trishuli, Nepal" --date 2026-08-26
-INCIDENT_ID="<printed incident id>"
+INCIDENT_ID="REPLACE_WITH_YOUR_PRINTED_INCIDENT_ID"
 .venv/bin/python -m src.analysis.flood_map --incident "$INCIDENT_ID" --checkpoint runs/expA/best.pt
 .venv/bin/python -m src.graph.impact --incident "$INCIDENT_ID"
 .venv/bin/python -m src.report.dashboard --incident "$INCIDENT_ID"
 ```
 
-Graph testing (synthetic, always labelled): `--list-critical-bridges`, `--test-link <link_id>` or `--test-polygon W S E N` on the impact command write to `impact_test/` with a red **SYNTHETIC TEST INPUT, NOT A MODEL RESULT** banner. `--include-debris-candidates` adds debris candidates as weak evidence in `impact_debris/`.
+For graph inspection, `--list-critical-bridges` lists bridge/link IDs. Synthetic scenarios using `--test-link <link_id>` or `--test-polygon W S E N` write to `impact_test/` with a **SYNTHETIC TEST INPUT, NOT A MODEL RESULT** banner. `--include-debris-candidates` adds debris candidates as weak evidence in `impact_debris/`.
 
 ## Outputs
 
@@ -182,7 +197,7 @@ To reproduce the comparison, obtain the EMSR927 AOI03 grading product (observed 
 .venv/bin/python -m src.report.dashboard --incident "$INCIDENT_ID" --validation-json "eval/results/$INCIDENT_ID/comparison.json"
 ```
 
-`<key>` is the folder printed by the flood-map stage. The 50 m tolerance metrics measure closeness, not overlap, and are reported as secondary.
+Set `INCIDENT_ID` as explained above. Replace `<key>` with the folder name in the flood-map stage's printed `cache_path`, or use that full `flood.tif` path for `--flood`. This comparison is optional. The 50 m tolerance metrics measure closeness, not overlap, and are reported as secondary.
 
 ## Model and training
 
